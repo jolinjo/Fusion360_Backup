@@ -2,8 +2,8 @@
 #  Copyright (c) 2020 by Patrick Rainsberry.                                   ~
 #  :license: Apache2, see LICENSE for more details.                            ~
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  Project-Archiver.py                                                            ~
-#  This file is a component of Project-Archiver.                                  ~
+#  CloseAllCommand.py                                                            ~
+#  This file is a component of BackupTool (Fusion360Tools).                       ~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 import apper

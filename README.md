@@ -1,5 +1,10 @@
-# Project-Archiver
-The archiver script will open all Fusion 360 3D data in a project and export it as STEP to a local location of your choosing. 
+# Fusion360Tools
+
+Fusion 360 工具集合，包含備份工具和其他實用工具。
+
+## BackupTool
+
+備份工具（原 Project-Archiver）會打開專案中的所有 Fusion 360 3D 數據，並將其導出為 STEP 文件到您選擇的本地位置。 
 
 [How to install](#How-to-install)  
 [How to use](#How-to-use)  
@@ -9,7 +14,7 @@ The archiver script will open all Fusion 360 3D data in a project and export it 
 ----
 
 ### How to install<a name="How-to-install"></a>
-1. Click the latest link and download the [latest distribution](https://github.com/tapnair/Project-Archiver/blob/master/dist/Project-Archiver-2.0.1.zip)
+1. Clone or download this repository
 
 *Note you should download from the link above.  The regular git downloads won't get the apper submodule*
 
@@ -25,21 +30,21 @@ Extract that file to your computer and continue below.**
 1. Launch Fusion 360.
 2. On the main toolbar click the **Scripts and Addins** button in the **Addins** Pane
 
-	![](Project-Archiver/resources/scripts-addins_button.png)
+	![](BackupTool/resources/scripts-addins_button.png)
 
 3. Select the **Addins tab** and click the "add"  
 
-    ![](Project-Archiver/resources/scripts-addins.png)
+    ![](BackupTool/resources/scripts-addins.png)
 
-4. Browse to the **Project-Archiver** sub-folder in the unzipped folder
+4. Browse to the **BackupTool** sub-folder in the Fusion360Tools directory
 
-   ![](Project-Archiver/resources/pick_add_in.png)
+   ![](BackupTool/resources/pick_add_in.png)
 
 5. Select the addin in the list and click run.  
 6. Dismiss the Addins dialog.  
-7. Click the ProjectArchiver Tab and you should see **Archive** Panel and command.
+7. Click the BackupTool Tab and you should see **Archive** Panel and command.
 
-	![](Project-Archiver/resources/button.png)
+	![](BackupTool/resources/button.png)
 
 ----
 
@@ -126,9 +131,29 @@ This fork includes several important improvements and bug fixes:
 - **文件夾對話框**: 使用 Fusion 360 的 `ui.createFolderDialog()` API 提供原生文件夾選擇功能。
 
 ### For Developers<a name="For-Developers"></a>
+
+#### 開發資源 / Development Resources
+
+本專案提供了完整的開發文檔和範例程式，方便開發者快速上手：
+
+This project provides comprehensive development documentation and example code to help developers get started quickly:
+
+- **📖 [快速查詢手冊 / Quick Reference](./QUICK_REFERENCE.md)**: 整合了完整的 API 參考、範例索引和開發指南，一站式查詢所有功能
+  - Comprehensive API reference, example index, and development guide - all in one place for quick lookup
+- **💻 [範例程式 / Examples](./examples/)**: 來自 [Fusion360APIClass](https://github.com/tapnair/Fusion360APIClass) 的實用範例
+  - Practical examples from Fusion360APIClass repository
+  - 包含腳本、Add-in、CAM 操作和外部 API 調用範例
+  - Includes scripts, Add-ins, CAM operations, and external API call examples
+- **🔌 [MCP 範例 / MCP Examples](./examples-mcp/)**: Fusion 360 Model Context Protocol Add-in 參考實現
+  - Reference implementation of Fusion 360 MCP Add-in for AI assistant integration
+  - 包含 MCP 伺服器、工具和資源實現，支援與 Cursor 等 AI 工具整合
+  - Includes MCP server, tools, and resources implementation for integration with AI tools like Cursor
+
+#### 設置開發環境 / Setup Development Environment
+
 Clone the repo
 
-Update the apper submodule by browsing to the 'Project-Archiver' sub directory in the unzipped directory and executing:
+Update the apper submodule by browsing to the 'BackupTool' sub directory and executing:
 
     git submodule add https://github.com/tapnair/apper
    
