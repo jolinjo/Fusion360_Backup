@@ -25,83 +25,140 @@ def export_folder(root_folder, output_folder, file_types, write_version, name_op
     ao = AppObjects()
     app = adsk.core.Application.get()
 
-    for folder in root_folder.dataFolders:
-        # 構建當前文件夾的路徑
-        current_folder_path = folder_path + "/" + folder.name if folder_path else folder.name
+    # 先將文件夾和文件轉換為列表，避免在迭代過程中對象狀態改變
+    try:
+        folders_list = []
+        for i in range(root_folder.dataFolders.count):
+            try:
+                folder = root_folder.dataFolders.item(i)
+                if folder is not None:
+                    folders_list.append(folder)
+            except:
+                continue
+        
+        for folder in folders_list:
+            # 構建當前文件夾的路徑
+            current_folder_path = folder_path + "/" + folder.name if folder_path else folder.name
 
-        if folder_preserve:
-            new_folder = os.path.join(output_folder, folder.name, "")
+            if folder_preserve:
+                new_folder = os.path.join(output_folder, folder.name, "")
 
-            if not os.path.exists(new_folder):
-                os.makedirs(new_folder)
-        else:
-            new_folder = output_folder
-
-        export_folder(folder, new_folder, file_types, write_version, name_option, folder_preserve, current_folder_path, project_name)
-
-    for file in root_folder.dataFiles:
-        if file.fileExtension == "f3d":
-            # 構建文件的完整路徑（專案名稱 + 文件夾路徑 + 文件名）
-            if folder_path:
-                file_path = folder_path + "/" + file.name
+                if not os.path.exists(new_folder):
+                    os.makedirs(new_folder)
             else:
-                file_path = file.name
-            
-            # 如果有專案名稱，添加到路徑開頭
-            if project_name:
-                file_path = project_name + "/" + file_path
-            
-            document = open_doc(file)
-            if document is not None:
-                try:
-                    output_name = get_name(write_version, name_option)
-                    export_active_doc(output_folder, file_types, output_name)
+                new_folder = output_folder
+
+            export_folder(folder, new_folder, file_types, write_version, name_option, folder_preserve, current_folder_path, project_name)
+    except Exception as e:
+        # 記錄文件夾迭代錯誤
+        FAILED_FILES.append({
+            'name': 'Folder iteration error',
+            'path': folder_path if folder_path else project_name,
+            'error': 'Error iterating folders: {}'.format(str(e))
+        })
+    
+    # 先將文件列表轉換為列表，避免在迭代過程中對象狀態改變
+    try:
+        files_list = []
+        for i in range(root_folder.dataFiles.count):
+            try:
+                file = root_folder.dataFiles.item(i)
+                if file is not None:
+                    files_list.append(file)
+            except:
+                continue
+        
+        for file in files_list:
+            try:
+                # 驗證文件對象是否有效
+                if file is None:
+                    continue
                     
-                except ValueError as e:
-                    # 記錄失敗的檔案
-                    FAILED_FILES.append({
-                        'name': file.name,
-                        'path': file_path,
-                        'error': str(e)
-                    })
-                except AttributeError as e:
-                    # 記錄失敗的檔案
-                    FAILED_FILES.append({
-                        'name': file.name,
-                        'path': file_path,
-                        'error': str(e)
-                    })
-                    # 確保在異常情況下也能關閉文件
+                file_ext = file.fileExtension
+                if file_ext != "f3d":
+                    continue
+            except Exception as e:
+                # 文件對象無效，跳過
+                continue
+            
+            if file_ext == "f3d":
+                # 構建文件的完整路徑（專案名稱 + 文件夾路徑 + 文件名）
+                try:
+                    file_name = file.name
+                except:
+                    file_name = "Unknown"
+                    
+                if folder_path:
+                    file_path = folder_path + "/" + file_name
+                else:
+                    file_path = file_name
+                
+                # 如果有專案名稱，添加到路徑開頭
+                if project_name:
+                    file_path = project_name + "/" + file_path
+                
+                document = open_doc(file)
+                if document is not None:
                     try:
-                        if not document.isSaved:
-                            document.close(False)
-                        else:
-                            document.close(False)
-                    except:
-                        pass
-                    break
-                except Exception as e:
-                    # 記錄失敗的檔案
+                        output_name = get_name(write_version, name_option)
+                        export_active_doc(output_folder, file_types, output_name)
+                        
+                    except ValueError as e:
+                        # 記錄失敗的檔案
+                        FAILED_FILES.append({
+                            'name': file_name,
+                            'path': file_path,
+                            'error': str(e)
+                        })
+                    except AttributeError as e:
+                        # 記錄失敗的檔案
+                        FAILED_FILES.append({
+                            'name': file_name,
+                            'path': file_path,
+                            'error': str(e)
+                        })
+                        # 確保在異常情況下也能關閉文件
+                        try:
+                            if not document.isSaved:
+                                document.close(False)
+                            else:
+                                document.close(False)
+                        except:
+                            pass
+                        break
+                    except Exception as e:
+                        # 記錄失敗的檔案
+                        FAILED_FILES.append({
+                            'name': file_name,
+                            'path': file_path,
+                            'error': str(e)
+                        })
+                    finally:
+                        # 無論成功或失敗，都關閉文件以釋放記憶體
+                        try:
+                            if document is not None:
+                                # 不保存更改，直接關閉（因為我們只是導出，不需要修改原文件）
+                                document.close(False)
+                        except:
+                            pass
+                else:
+                    # 無法打開文件，記錄為失敗
                     FAILED_FILES.append({
-                        'name': file.name,
+                        'name': file_name,
                         'path': file_path,
-                        'error': str(e)
+                        'error': 'Failed to open file'
                     })
-                finally:
-                    # 無論成功或失敗，都關閉文件以釋放記憶體
-                    try:
-                        if document is not None:
-                            # 不保存更改，直接關閉（因為我們只是導出，不需要修改原文件）
-                            document.close(False)
-                    except:
-                        pass
-            else:
-                # 無法打開文件，記錄為失敗
-                FAILED_FILES.append({
-                    'name': file.name,
-                    'path': file_path,
-                    'error': 'Failed to open file'
-                })
+    except Exception as e:
+        # 記錄文件迭代錯誤
+        try:
+            folder_name = folder_path if folder_path else project_name
+        except:
+            folder_name = "Unknown"
+        FAILED_FILES.append({
+            'name': 'File iteration error',
+            'path': folder_name,
+            'error': 'Error iterating files: {}'.format(str(e))
+        })
 
 
 def open_doc(data_file):
