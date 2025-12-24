@@ -6,7 +6,7 @@
 	"description":	{
 		"":	"Export all files in a given project to Step FIle for archival purposes."
 	},
-	"version":	"0.0",
+	"version":	"0.1.0",
 	"runOnStartup":	false,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true
