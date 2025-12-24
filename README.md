@@ -162,7 +162,9 @@ Samples are licensed under the terms of the [MIT License](http://opensource.org/
 
 ## Written by
 
-Written by [Patrick Rainsberry](https://twitter.com/prrainsberry) <br /> (Autodesk Fusion 360 Product Manager)
+Written by **Jason.Lin** 
+
+Based on original work by [Patrick Rainsberry](https://twitter.com/prrainsberry) (Autodesk Fusion 360 Product Manager)
 
 See more useful [Fusion 360 Utilities](https://tapnair.github.io/index.html)
 

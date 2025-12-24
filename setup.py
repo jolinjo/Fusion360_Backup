@@ -14,6 +14,6 @@ setup(
     },
     url='https://github.com/tapnair/Fusion360Tools',
     license='MIT',
-    author='Patrick Rainsberry',
-    author_email='patrick.rainsberry@autodesk.com',
+    author='Jason.Lin',
+    author_email='jolinjo@gmail.com',
 )
