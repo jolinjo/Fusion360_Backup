@@ -17,13 +17,17 @@ from apper import AppObjects
 import config
 
 SKIPPED_FILES = []
+FAILED_FILES = []  # 追蹤失敗的檔案，格式: [{'name': '文件名', 'path': '完整路徑', 'error': '錯誤信息'}]
 
 
-def export_folder(root_folder, output_folder, file_types, write_version, name_option, folder_preserve):
+def export_folder(root_folder, output_folder, file_types, write_version, name_option, folder_preserve, folder_path="", project_name=""):
+    global FAILED_FILES
     ao = AppObjects()
     app = adsk.core.Application.get()
 
     for folder in root_folder.dataFolders:
+        # 構建當前文件夾的路徑
+        current_folder_path = folder_path + "/" + folder.name if folder_path else folder.name
 
         if folder_preserve:
             new_folder = os.path.join(output_folder, folder.name, "")
@@ -33,21 +37,40 @@ def export_folder(root_folder, output_folder, file_types, write_version, name_op
         else:
             new_folder = output_folder
 
-        export_folder(folder, new_folder, file_types, write_version, name_option, folder_preserve)
+        export_folder(folder, new_folder, file_types, write_version, name_option, folder_preserve, current_folder_path, project_name)
 
     for file in root_folder.dataFiles:
         if file.fileExtension == "f3d":
+            # 構建文件的完整路徑（專案名稱 + 文件夾路徑 + 文件名）
+            if folder_path:
+                file_path = folder_path + "/" + file.name
+            else:
+                file_path = file.name
+            
+            # 如果有專案名稱，添加到路徑開頭
+            if project_name:
+                file_path = project_name + "/" + file_path
+            
             document = open_doc(file)
             if document is not None:
                 try:
                     output_name = get_name(write_version, name_option)
                     export_active_doc(output_folder, file_types, output_name)
                     
-                # TODO add handling
                 except ValueError as e:
-                    ao.ui.messageBox(str(e))
+                    # 記錄失敗的檔案
+                    FAILED_FILES.append({
+                        'name': file.name,
+                        'path': file_path,
+                        'error': str(e)
+                    })
                 except AttributeError as e:
-                    ao.ui.messageBox(str(e))
+                    # 記錄失敗的檔案
+                    FAILED_FILES.append({
+                        'name': file.name,
+                        'path': file_path,
+                        'error': str(e)
+                    })
                     # 確保在異常情況下也能關閉文件
                     try:
                         if not document.isSaved:
@@ -58,8 +81,12 @@ def export_folder(root_folder, output_folder, file_types, write_version, name_op
                         pass
                     break
                 except Exception as e:
-                    # 捕獲其他異常並確保文件被關閉
-                    ao.ui.messageBox('Error exporting file: {}'.format(str(e)))
+                    # 記錄失敗的檔案
+                    FAILED_FILES.append({
+                        'name': file.name,
+                        'path': file_path,
+                        'error': str(e)
+                    })
                 finally:
                     # 無論成功或失敗，都關閉文件以釋放記憶體
                     try:
@@ -68,6 +95,13 @@ def export_folder(root_folder, output_folder, file_types, write_version, name_op
                             document.close(False)
                     except:
                         pass
+            else:
+                # 無法打開文件，記錄為失敗
+                FAILED_FILES.append({
+                    'name': file.name,
+                    'path': file_path,
+                    'error': 'Failed to open file'
+                })
 
 
 def open_doc(data_file):
@@ -252,21 +286,52 @@ class ExportCommand(apper.Fusion360CommandBase):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
-        export_folder(root_folder, output_folder, file_types, write_version, name_option, folder_preserve)
+        # 獲取專案名稱用於顯示路徑
+        project_name = ""
+        if selected_project is not None:
+            project_name = selected_project.name
+        elif ao.app.data.activeProject is not None:
+            project_name = ao.app.data.activeProject.name
+        
+        export_folder(root_folder, output_folder, file_types, write_version, name_option, folder_preserve, "", project_name)
 
+        # 構建結果訊息
+        result_message = ""
+        
+        # 檢查是否有失敗的檔案
+        if len(FAILED_FILES) > 0:
+            result_message = "Export Completed with Errors / 導出完成，但有錯誤：\n\n"
+            result_message += "Failed Files / 失敗的檔案 ({})：\n".format(len(FAILED_FILES))
+            result_message += "失敗檔案數量：{}\n\n".format(len(FAILED_FILES))
+            
+            for i, failed_file in enumerate(FAILED_FILES, 1):
+                result_message += "{}. {}\n".format(i, failed_file['name'])
+                result_message += "   Path / 路徑: {}\n".format(failed_file['path'])
+                result_message += "   Error / 錯誤: {}\n\n".format(failed_file['error'])
+        else:
+            # 沒有失敗的檔案，顯示成功訊息
+            result_message = "Export Completed Successfully! / 導出成功完成！\n\n"
+            result_message += "All files have been exported successfully. / 所有檔案已成功導出。\n"
+        
+        # 檢查是否有跳過的檔案（F3D 格式，因為有外部參考）
         if len(SKIPPED_FILES) > 0:
-            ao.ui.messageBox(
-                "The following files contained external references and could not be exported as f3d's: {}".format(
-                    SKIPPED_FILES
-                )
-            )
+            if len(FAILED_FILES) > 0:
+                result_message += "\n"
+            result_message += "Skipped Files (F3D with external references) / 跳過的檔案（F3D 格式，包含外部參考）：\n"
+            result_message += "跳過的檔案數量：{}\n\n".format(len(SKIPPED_FILES))
+            for i, skipped_file in enumerate(SKIPPED_FILES, 1):
+                result_message += "{}. {}\n".format(i, skipped_file)
+        
+        # 顯示結果訊息
+        ao.ui.messageBox(result_message)
 
         close_command = ao.ui.commandDefinitions.itemById(self.fusion_app.command_id_from_name(config.close_cmd_id))
         close_command.execute()
 
     def on_create(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs):
-        global SKIPPED_FILES
+        global SKIPPED_FILES, FAILED_FILES
         SKIPPED_FILES.clear()
+        FAILED_FILES.clear()
         default_dir = apper.get_default_dir(config.app_name)
         
         ao = AppObjects()
